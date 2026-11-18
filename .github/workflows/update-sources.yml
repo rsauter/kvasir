@@ -1,0 +1,86 @@
+# Prüft jede Woche, ob es neue Fassungen der Quellen gibt.
+# - Swiss Unihockey (TLex): holt geänderte Erlasse und eröffnet einen Pull Request.
+# - PDF-Leitfäden: eröffnet ein Issue. Die Umwandlung braucht pdftotext von xpdf
+#   (Option -table) und wird lokal gemacht: python tools/fetch_pdfs.py <id>
+name: Quellen prüfen
+
+on:
+  schedule:
+    - cron: "0 5 * * 1" # montags 05:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Swiss Unihockey (TLex) prüfen und Geändertes holen
+        id: tlex
+        run: |
+          node tools/fetch_tlex.mjs --check | tee "$RUNNER_TEMP/tlex.txt" || true
+          changed=$(awk '$1=="*"{print $2}' "$RUNNER_TEMP/tlex.txt" | tr '\n' ' ' | xargs)
+          if [ -n "$changed" ]; then node tools/fetch_tlex.mjs $changed; fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: PDF-Leitfäden prüfen
+        id: pdf
+        run: |
+          python tools/fetch_pdfs.py --check | tee "$RUNNER_TEMP/pdf.txt" || true
+          changed=$(awk '$1=="*" || $1=="!"{print $2}' "$RUNNER_TEMP/pdf.txt" | tr '\n' ' ' | xargs)
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: Pull Request für Swiss Unihockey
+        if: steps.tlex.outputs.changed != ''
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: sources/swissunihockey-update
+          delete-branch: true
+          add-paths: knowledge/
+          commit-message: "Swiss Unihockey: neue Fassungen ${{ steps.tlex.outputs.changed }}"
+          title: "Swiss Unihockey: neue Fassungen (${{ steps.tlex.outputs.changed }})"
+          body: |
+            Die wöchentliche Prüfung hat neue Fassungen in TLex gefunden: `${{ steps.tlex.outputs.changed }}`
+
+            Vor dem Mergen:
+            - Änderungen in `knowledge/fulltext/swissunihockey/` durchsehen.
+            - Prüfen, ob Auszüge in `knowledge/excerpts/` betroffen sind.
+            - Nach dem Mergen ein neues Release taggen.
+
+      - name: Issue für geänderte PDF-Leitfäden
+        if: steps.pdf.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHANGED: ${{ steps.pdf.outputs.changed }}
+        run: |
+          title="PDF-Leitfaden geändert oder nicht erreichbar"
+          if [ -z "$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[].number')" ]; then
+            gh issue create --title "$title" --body "Betroffen: \`$CHANGED\`
+
+          Lokal neu umwandeln und prüfen:
+
+          \`\`\`
+          python tools/fetch_pdfs.py $CHANGED
+          \`\`\`
+
+          Ist ein PDF nicht erreichbar, hat der Herausgeber vermutlich den Dateinamen geändert (zum Beispiel neue Jahreszahl). Neuen Link auf der Übersichtsseite suchen und in \`tools/pdf-sources.json\` eintragen.
+
+          Ausgabe der Prüfung:
+
+          \`\`\`
+          $(cat "$RUNNER_TEMP/pdf.txt")
+          \`\`\`"
+          fi

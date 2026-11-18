@@ -1,0 +1,15 @@
+# Persönliche Regeln
+rules.local.md
+
+# Gebaute Pakete gehören in GitHub Releases, nicht ins Repository
+dist/
+
+# Vereins- und Ressortinhalte gehören dem jeweiligen Verein, nicht ins Kvasir-Repository
+knowledge/club/*
+!knowledge/club/README.md
+rules/club-*.md
+rules/department-*.md
+
+# Python
+__pycache__/
+*.pyc

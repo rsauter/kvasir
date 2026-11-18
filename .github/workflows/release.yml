@@ -1,0 +1,41 @@
+# Baut das Kvasir-Paket und veröffentlicht es als Release.
+# Auslöser: ein Tag wie v2026.11.18 (git tag v2026.11.18 && git push origin v2026.11.18)
+# Vorher wird geprüft, ob alle Quellen aktuell sind. Sonst bricht der Lauf ab.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Quellen auf neue Fassungen prüfen
+        run: |
+          node tools/fetch_tlex.mjs --check
+          python tools/fetch_pdfs.py --check
+
+      - name: Paket bauen
+        run: python tools/build_package.py "${GITHUB_REF_NAME#v}"
+
+      - name: Release erstellen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "Kvasir ${GITHUB_REF_NAME#v}" \
+            --generate-notes

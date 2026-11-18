@@ -1,0 +1,33 @@
+{
+  "documents": [
+    {
+      "id": "be-sportfonds-praxisleitfaden",
+      "module": "canton-be",
+      "title": "Praxisleitfaden Sportfonds",
+      "publisher": "Kanton Bern, Sicherheitsdirektion, Fonds und Bewilligungen (FOBE)",
+      "page": "https://www.fobe.sid.be.ch/de/start/ueber-uns/rechtliche-grundlagen.html",
+      "pdf": "https://www.fobe.sid.be.ch/content/dam/fobe_sid/dokumente/de/sportfonds/2026%20Praxisleitfaden%20Sportfonds.pdf",
+      "scope": "kern",
+      "agents": [
+        "treasurer",
+        "youth",
+        "president",
+        "match-operations"
+      ]
+    },
+    {
+      "id": "be-lotteriefonds-praxisleitfaden",
+      "module": "canton-be",
+      "title": "Praxisleitfaden Lotteriefonds",
+      "publisher": "Kanton Bern, Sicherheitsdirektion, Fonds und Bewilligungen (FOBE)",
+      "page": "https://www.fobe.sid.be.ch/de/start/ueber-uns/rechtliche-grundlagen.html",
+      "pdf": "https://www.fobe.sid.be.ch/content/dam/fobe_sid/dokumente/de/%C3%BCber-uns/2026%20Praxisleitfaden%20Lotteriefonds.pdf",
+      "scope": "ergänzend",
+      "agents": [
+        "president",
+        "treasurer",
+        "sponsorship"
+      ]
+    }
+  ]
+}
